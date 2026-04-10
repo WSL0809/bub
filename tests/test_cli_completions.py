@@ -8,6 +8,7 @@ from prompt_toolkit.document import Document
 
 import bub.channels.cli as cli_module
 from bub.channels.cli import CliChannel
+from bub.channels.cli.completer import CommaCommandCompleter
 
 
 def _get_completion_texts(completer, text: str) -> list[str]:
@@ -46,3 +47,25 @@ def test_cli_command_completer_only_triggers_after_comma(monkeypatch, tmp_path: 
 
     assert completer is not None
     assert _get_completion_texts(completer, "elp") == []
+
+
+def test_cli_command_completer_keeps_working_when_word_boundary_drops_comma() -> None:
+    class FakeDocument:
+        def __init__(self, text: str, word_before_cursor: str) -> None:
+            self.text = text
+            self.text_before_cursor = text
+            self.cursor_position = len(text)
+            self._word_before_cursor = word_before_cursor
+
+        def get_word_before_cursor(self, WORD: bool = True) -> str:  # noqa: N803
+            return self._word_before_cursor
+
+    completer = CommaCommandCompleter((",help",))
+    completions = [c.text for c in completer.get_completions(FakeDocument(",hel", "hel"), CompleteEvent())]
+    assert completions == [",help"]
+
+
+def test_cli_command_completer_completes_when_args_exist() -> None:
+    completer = CommaCommandCompleter((",help",))
+    doc = Document(text=",hel query=1", cursor_position=4)
+    assert [c.text for c in completer.get_completions(doc, CompleteEvent())] == [",help"]

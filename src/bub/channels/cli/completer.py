@@ -18,15 +18,25 @@ class CommaCommandCompleter(Completer):
     command_words: tuple[str, ...]
 
     def get_completions(self, document: Document, complete_event: CompleteEvent) -> Iterable[Completion]:
-        word = document.get_word_before_cursor(WORD=True)
-        if not word.startswith(","):
+        text = document.text
+        before = document.text_before_cursor
+
+        if not text.startswith(","):
             return
 
-        start = document.cursor_position - len(word)
-        if start != 0:
+        # 只在“行首 internal command”补全：光标必须处在第一个 token 的末尾（空白字符之前），
+        # 或者已经到达行尾。这样补全替换不会意外拼接/重复后缀。
+        if any(ch.isspace() for ch in before):
             return
 
-        query = word[1:].casefold()
+        cursor = document.cursor_position
+        if cursor < len(text) and not text[cursor].isspace():
+            return
+
+        typed = before
+        query = typed[1:].casefold()
+        start_position = -len(typed)
+
         matches: list[tuple[int, int, str]] = []
         for candidate in self.command_words:
             if not candidate.startswith(","):
@@ -41,4 +51,4 @@ class CommaCommandCompleter(Completer):
 
         matches.sort()
         for _, __, candidate in matches:
-            yield Completion(candidate, start_position=-len(word))
+            yield Completion(candidate, start_position=start_position)
