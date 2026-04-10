@@ -7,7 +7,6 @@ from hashlib import md5
 from pathlib import Path
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -19,6 +18,7 @@ from rich.live import Live
 from bub.builtin.agent import Agent
 from bub.builtin.tape import TapeInfo
 from bub.channels.base import Channel
+from bub.channels.cli.completer import CommaCommandCompleter
 from bub.channels.cli.renderer import CliRenderer
 from bub.channels.message import ChannelMessage, MessageKind
 from bub.envelope import field_of
@@ -163,7 +163,7 @@ class CliChannel(Channel):
         history_file.parent.mkdir(parents=True, exist_ok=True)
         history = FileHistory(str(history_file))
         tool_names = sorted((f",{name}" for name in REGISTRY), key=_tool_sort_key)
-        completer = WordCompleter(tool_names, ignore_case=True)
+        completer = CommaCommandCompleter(tuple(tool_names))
         return PromptSession(
             completer=completer,
             complete_while_typing=True,
