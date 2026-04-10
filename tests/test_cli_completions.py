@@ -16,8 +16,7 @@ def _get_completion_texts(completer, text: str) -> list[str]:
     return [c.text for c in completer.get_completions(doc, CompleteEvent())]
 
 
-def test_cli_command_completer_matches_substring(monkeypatch, tmp_path: Path) -> None:
-    # 端到端覆盖：验证 `CliChannel` 的补全在输入 `,` 后按前缀实时匹配命令名。
+def test_cli_command_completer_matches_prefix(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         cli_module,
         "REGISTRY",
@@ -26,7 +25,9 @@ def test_cli_command_completer_matches_substring(monkeypatch, tmp_path: Path) ->
     )
 
     channel = CliChannel.__new__(CliChannel)
-    channel._agent = SimpleNamespace(settings=SimpleNamespace(home=tmp_path), framework=SimpleNamespace(workspace=tmp_path))
+    channel._agent = SimpleNamespace(
+        settings=SimpleNamespace(home=tmp_path), framework=SimpleNamespace(workspace=tmp_path)
+    )
 
     session = channel._build_prompt(tmp_path)
     completer = session.completer
@@ -40,7 +41,9 @@ def test_cli_command_completer_only_triggers_after_comma(monkeypatch, tmp_path: 
     monkeypatch.setattr(cli_module, "REGISTRY", {"help": object()}, raising=False)
 
     channel = CliChannel.__new__(CliChannel)
-    channel._agent = SimpleNamespace(settings=SimpleNamespace(home=tmp_path), framework=SimpleNamespace(workspace=tmp_path))
+    channel._agent = SimpleNamespace(
+        settings=SimpleNamespace(home=tmp_path), framework=SimpleNamespace(workspace=tmp_path)
+    )
 
     session = channel._build_prompt(tmp_path)
     completer = session.completer
@@ -57,7 +60,7 @@ def test_cli_command_completer_keeps_working_when_word_boundary_drops_comma() ->
             self.cursor_position = len(text)
             self._word_before_cursor = word_before_cursor
 
-        def get_word_before_cursor(self, WORD: bool = True) -> str:  # noqa: N803
+        def get_word_before_cursor(self, WORD: bool = True) -> str:
             return self._word_before_cursor
 
     completer = CommaCommandCompleter((",help",))
