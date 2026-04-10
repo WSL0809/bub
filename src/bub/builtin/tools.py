@@ -42,9 +42,9 @@ class SearchInput(BaseModel):
     limit: int = Field(20, description="Maximum number of search results to return.")
     start: str | None = Field(None, description="Optional start date to filter entries (ISO format).")
     end: str | None = Field(None, description="Optional end date to filter entries (ISO format).")
-    kinds: list[EntryKind] = Field(
+    kinds: list[str] = Field(
         default=["message", "tool_result"],
-        description="Optional list of entry kinds to filter search results.",
+        description="Optional list of entry kinds to filter search results. Can include 'event', 'anchor', 'system', 'message', 'tool_call', 'tool_result'.",
     )
 
 
