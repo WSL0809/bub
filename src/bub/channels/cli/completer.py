@@ -11,8 +11,8 @@ from prompt_toolkit.document import Document
 class CommaCommandCompleter(Completer):
     """仅用于以 `,` 开头的内部命令补全。
 
-    匹配规则：去掉前导 `,` 后，对命令名做不区分大小写的“子串命中”。
-    例如输入 `,elp` 也能匹配到 `,help`。
+    匹配规则：去掉前导 `,` 后，对命令名做不区分大小写的“前缀匹配”。
+    例如输入 `,hel` 能匹配到 `,help`。
     """
 
     command_words: tuple[str, ...]
@@ -37,18 +37,17 @@ class CommaCommandCompleter(Completer):
         query = typed[1:].casefold()
         start_position = -len(typed)
 
-        matches: list[tuple[int, int, str]] = []
+        matches: list[tuple[int, str]] = []
         for candidate in self.command_words:
             if not candidate.startswith(","):
                 continue
             haystack = candidate[1:].casefold()
             if not query:
-                matches.append((0, len(haystack), candidate))
+                matches.append((len(haystack), candidate))
                 continue
-            idx = haystack.find(query)
-            if idx != -1:
-                matches.append((idx, len(haystack), candidate))
+            if haystack.startswith(query):
+                matches.append((len(haystack), candidate))
 
         matches.sort()
-        for _, __, candidate in matches:
+        for _, candidate in matches:
             yield Completion(candidate, start_position=start_position)

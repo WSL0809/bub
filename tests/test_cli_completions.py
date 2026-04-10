@@ -17,7 +17,7 @@ def _get_completion_texts(completer, text: str) -> list[str]:
 
 
 def test_cli_command_completer_matches_substring(monkeypatch, tmp_path: Path) -> None:
-    # 端到端覆盖：验证 `CliChannel` 的补全在输入 `,` 后按子串实时匹配命令名。
+    # 端到端覆盖：验证 `CliChannel` 的补全在输入 `,` 后按前缀实时匹配命令名。
     monkeypatch.setattr(
         cli_module,
         "REGISTRY",
@@ -32,8 +32,8 @@ def test_cli_command_completer_matches_substring(monkeypatch, tmp_path: Path) ->
     completer = session.completer
 
     assert completer is not None
-    assert ",help" in _get_completion_texts(completer, ",elp")
-    assert ",tape.info" in _get_completion_texts(completer, ",ape")
+    assert ",help" in _get_completion_texts(completer, ",hel")
+    assert ",tape.info" in _get_completion_texts(completer, ",ta")
 
 
 def test_cli_command_completer_only_triggers_after_comma(monkeypatch, tmp_path: Path) -> None:
@@ -69,3 +69,28 @@ def test_cli_command_completer_completes_when_args_exist() -> None:
     completer = CommaCommandCompleter((",help",))
     doc = Document(text=",hel query=1", cursor_position=4)
     assert [c.text for c in completer.get_completions(doc, CompleteEvent())] == [",help"]
+
+
+def test_delete_before_cursor_triggers_completion_for_internal_commands() -> None:
+    from bub.channels.cli import _delete_before_cursor_and_complete
+
+    calls: list[str] = []
+
+    class FakeBuffer:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+        def delete_before_cursor(self, *, count: int) -> None:
+            assert count == 1
+            self.text = self.text[:-1]
+            calls.append("delete")
+
+        def start_completion(self, *, select_first: bool) -> None:
+            assert select_first is False
+            calls.append("complete")
+
+    buffer = FakeBuffer(",helx")
+    _delete_before_cursor_and_complete(buffer)
+
+    assert buffer.text == ",hel"
+    assert calls == ["delete", "complete"]

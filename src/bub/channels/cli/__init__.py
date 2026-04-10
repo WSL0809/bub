@@ -26,6 +26,12 @@ from bub.tools import REGISTRY
 from bub.types import MessageHandler
 
 
+def _delete_before_cursor_and_complete(buffer) -> None:
+    buffer.delete_before_cursor(count=1)
+    if buffer.text.startswith(","):
+        buffer.start_completion(select_first=False)
+
+
 @dataclass
 class _StreamRenderState:
     live: Live
@@ -154,6 +160,10 @@ class CliChannel(Channel):
         def _toggle_mode(event) -> None:
             self._mode = "shell" if self._mode == "agent" else "agent"
             event.app.invalidate()
+
+        @kb.add("backspace")
+        def _backspace(event) -> None:
+            _delete_before_cursor_and_complete(event.current_buffer)
 
         def _tool_sort_key(tool_name: str) -> tuple[str, str]:
             section, _, name = tool_name.rpartition(".")
