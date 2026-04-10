@@ -8,6 +8,7 @@ if [ -f "/workspace/bub-reqs.txt" ]; then
 fi
 
 source /app/.venv/bin/activate
+/app/.venv/bin/bub install
 if [ -f "/workspace/startup.sh" ]; then
     exec bash /workspace/startup.sh
 else
